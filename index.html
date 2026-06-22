@@ -155,28 +155,55 @@
           ]);
 
           try {
-            const response = await Chatbot.getResponseAsync(inputText);
-            setChatMessages([
-              ...newChatMessages,
-              {
-                message: response,
-                sender: 'robot',
-                id: crypto.randomUUID()
-              }
-            ]);
-          } catch (error) {
-            console.error('Error getting response:', error);
-            setChatMessages([
-              ...newChatMessages,
-              {
-                message: 'Sorry, something went wrong. Please try again.',
-                sender: 'robot',
-                id: crypto.randomUUID()
-              }
-            ]);
-          } finally {
-            setIsLoading(false);
-          }
+  let response;
+
+  try {
+    // First try your custom API
+    const apiResponse = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: inputText
+      })
+    });
+
+    if (apiResponse.ok) {
+      const data = await apiResponse.json();
+      response = data.reply;
+    } else {
+      throw new Error("API failed");
+    }
+
+  } catch (err) {
+    console.log("Using fallback chatbot");
+    
+    // Fallback to SuperSimpleDev chatbot
+    response = await Chatbot.getResponseAsync(inputText);
+  }
+
+  setChatMessages([
+    ...newChatMessages,
+    {
+      message: response,
+      sender: "robot",
+      id: crypto.randomUUID()
+    }
+  ]);
+
+} catch (error) {
+  console.error(error);
+
+  setChatMessages([
+    ...newChatMessages,
+    {
+      message: "Sorry, something went wrong.",
+      sender: "robot",
+      id: crypto.randomUUID()
+    }
+  ]);
+}
         }
 
         function handleKeyDown(event) {
